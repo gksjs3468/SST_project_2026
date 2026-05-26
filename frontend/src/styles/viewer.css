@@ -1,0 +1,146 @@
+/* Viewer Component Styles */
+.viewer-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #000;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.viewer-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.caption-display {
+  width: 100%;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.caption-display p {
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.caption-display.empty p {
+  color: #666;
+  font-size: 48px;
+}
+
+.caption-display.active p {
+  color: #fff;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.caption-history {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  max-height: 25vh;
+  overflow-y: auto;
+}
+
+.caption-history h3 {
+  font-size: 12px;
+  color: #999;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 14px;
+  color: #ccc;
+  border-left: 3px solid #667eea;
+}
+
+.connection-indicator {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: rgba(255, 107, 107, 0.8);
+  color: white;
+}
+
+.connection-indicator.connected {
+  background-color: rgba(81, 207, 102, 0.8);
+}
+
+/* Scrollbar styling for history */
+.caption-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+.caption-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.caption-history::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.caption-history::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .caption-display p {
+    font-size: 48px;
+  }
+
+  .viewer-main {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .caption-display p {
+    font-size: 32px;
+  }
+
+  .viewer-main {
+    padding: 16px;
+  }
+
+  .caption-history {
+    max-height: 30vh;
+  }
+}
