@@ -47,6 +47,18 @@ export class SocketManager {
         this.handleCaptionCorrection(socket, data);
       });
 
+      // Caption final events (from admin - situation captions)
+      socket.on('caption:final', (data) => {
+        console.log(`📋 Final caption received:`, data);
+        // Broadcast to all clients
+        this.io.emit('caption:final', data);
+      });
+
+      // Caption clear all event
+      socket.on('caption:clearAll', () => {
+        this.handleClearAllCaptions(socket);
+      });
+
       // Disconnection
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
@@ -189,6 +201,13 @@ export class SocketManager {
     // Emit to admin interface
     socket.emit(SOCKET_EVENTS.CAPTION_FINAL, captionData);
 
+    // Broadcast to all viewers immediately
+    this.io.emit(SOCKET_EVENTS.CAPTION_DISPLAY, {
+      id: captionId,
+      text: result.text,
+      isFinal: true,
+    });
+
     // Store caption
     const session = this.activeSessions.get(socket.id);
     if (session) {
@@ -223,13 +242,22 @@ export class SocketManager {
       text: correctedText,
       timestamp: Date.now(),
     });
+  }
 
-    // Also emit to display viewers
-    this.io.emit(SOCKET_EVENTS.CAPTION_DISPLAY, {
-      id: captionId,
-      text: correctedText,
-      isFinal: true,
-    });
+  /**
+   * Handle caption clear all request
+   */
+  handleClearAllCaptions(socket) {
+    console.log(`Clearing all captions for session: ${socket.id}`);
+
+    const session = this.activeSessions.get(socket.id);
+    if (session) {
+      session.captions = [];
+      session.corrections = {};
+    }
+
+    // Broadcast clear event to all viewers
+    this.io.emit('caption:clear');
   }
 
   /**

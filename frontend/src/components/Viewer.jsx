@@ -6,10 +6,11 @@ import '../styles/viewer.css';
  * Viewer Component - Display final captions to audience
  */
 function Viewer() {
-  const [displayCaption, setDisplayCaption] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
   const [captionHistory, setCaptionHistory] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
   const socketServiceRef = useRef(null);
+
+  const MAX_CAPTIONS = 60; // 자동 초기화 기준
 
   useEffect(() => {
     socketServiceRef.current = new SocketService(
@@ -21,15 +22,52 @@ function Viewer() {
       .then(() => setIsConnected(true))
       .catch(err => console.error('Connection failed:', err));
 
-    // Listen for corrected captions (final display)
-    socketServiceRef.current.on('caption:display', (data) => {
-      setDisplayCaption(data.text);
-      setCaptionHistory(prev => [data, ...prev.slice(0, 9)]);
+    // Listen for final captions
+    socketServiceRef.current.on('caption:final', (data) => {
+      setCaptionHistory(prev => {
+        const updated = [...prev, data];
+        // 자동 초기화: MAX_CAPTIONS을 넘으면 가장 오래된 항목 제거
+        if (updated.length > MAX_CAPTIONS) {
+          return updated.slice(updated.length - MAX_CAPTIONS);
+        }
+        return updated;
+      });
+    });
+
+    // Listen for corrected captions - update existing caption
+    socketServiceRef.current.on('caption:corrected', (data) => {
+      setCaptionHistory(prev => {
+        // 기존 ID를 가진 항목을 찾아서 업데이트 (새로 추가하지 않음)
+        const found = prev.findIndex(item => item.id === data.id);
+        if (found !== -1) {
+          // 기존 항목을 업데이트
+          const updated = [...prev];
+          updated[found] = {
+            ...updated[found],
+            text: data.text,
+            isCorrection: true
+          };
+          return updated;
+        }
+        // ID를 못 찾으면 그냥 반환 (추가하지 않음)
+        return prev;
+      });
     });
 
     // Listen for caption clear
     socketServiceRef.current.on('caption:clear', () => {
-      setDisplayCaption('');
+      setCaptionHistory([]);
+    });
+
+    // Listen for display captions (final captions from backend)
+    socketServiceRef.current.on('caption:display', (data) => {
+      setCaptionHistory(prev => {
+        const updated = [...prev, data];
+        if (updated.length > MAX_CAPTIONS) {
+          return updated.slice(updated.length - MAX_CAPTIONS);
+        }
+        return updated;
+      });
     });
 
     return () => {
@@ -39,24 +77,26 @@ function Viewer() {
 
   return (
     <div className="viewer-container">
-      <div className="viewer-main">
-        <div className={`caption-display ${displayCaption ? 'active' : 'empty'}`}>
-          <p>{displayCaption || '대기 중...'}</p>
-        </div>
-      </div>
-
-      {captionHistory.length > 0 && (
-        <div className="caption-history">
-          <h3>최근 자막</h3>
-          <div className="history-list">
-            {captionHistory.map((caption, idx) => (
-              <div key={idx} className="history-item">
-                {caption.text}
-              </div>
-            ))}
+      <div className="caption-flow-container">
+        {captionHistory.length === 0 ? (
+          <span className="empty-stream">대기 중...</span>
+        ) : (
+          <div className="caption-flow">
+            {captionHistory.map((caption, idx) => {
+              // 텍스트 필드 우선순위: text > correctedText > originalText
+              const displayText = caption.text || caption.correctedText || caption.originalText || '';
+              return (
+                <span
+                  key={idx}
+                  className={`caption-word ${caption.isCorrection || caption.isSituation ? 'corrected' : ''}`}
+                >
+                  {displayText}
+                </span>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className={`connection-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
         {isConnected ? '✓ 연결됨' : '✗ 연결 대기 중'}

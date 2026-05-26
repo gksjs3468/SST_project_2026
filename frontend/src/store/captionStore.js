@@ -127,6 +127,41 @@ class CaptionStore {
   }
 
   /**
+   * Clear all captions and display history (웹소켓은 유지)
+   */
+  clearAllCaptions() {
+    this.captions.clear();
+    this.captionHistory = [];
+    this.corrections.clear();
+    this.notifyListeners();
+  }
+
+  /**
+   * Delete corrected captions only
+   */
+  deleteCorrectedCaptions() {
+    const correctedIds = [];
+    
+    for (const [id, caption] of this.captions.entries()) {
+      if (caption.status === 'corrected') {
+        correctedIds.push(id);
+      }
+    }
+
+    correctedIds.forEach(id => {
+      this.captions.delete(id);
+      this.corrections.delete(id);
+    });
+
+    // Update history to remove deleted captions
+    this.captionHistory = this.captionHistory.filter(
+      c => !correctedIds.includes(c.id)
+    );
+
+    this.notifyListeners();
+  }
+
+  /**
    * Clear all captions
    */
   clearAll() {
